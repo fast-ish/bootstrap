@@ -1,0 +1,74 @@
+# Configuration for GitHub labeler action
+# Automatically applies labels to PRs based on file changes
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**/*'
+      - 'README.md'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+
+github-actions:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/**/*'
+      - '.github/workflows/**/*'
+
+typescript:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.ts'
+      - 'lib/**/*'
+      - 'bin/**/*'
+
+test:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'test/**/*'
+      - '**/*.test.ts'
+      - '**/*.spec.ts'
+
+build:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'jest.config.js'
+
+config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.json'
+      - '.gitignore'
+      - '.editorconfig'
+
+cdk:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/cdk/**/*'
+      - '**/*Stack.ts'
+      - '**/*Construct.ts'
+      - 'cdk.json'
+      - 'cdk.context.json'
+
+security:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/security/**/*'
+      - '**/auth/**/*'
+      - '.github/dependabot.yml'
+
+infrastructure:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/infra/**/*'
+      - '**/infrastructure/**/*'
+      - 'lib/**/*'
