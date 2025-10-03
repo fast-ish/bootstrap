@@ -1,0 +1,12 @@
+{
+  "cloud_access_policy_token": "glc_eyJ",
+  "prometheus_host": "https://prometheus-prod-1-prod-us-west-0.grafana.net",
+  "prometheus_username": "0000000",
+  "loki_host": "https://logs-prod-1.grafana.net",
+  "loki_username": "000000",
+  "tempo_host": "https://tempo-prod-1-prod-us-west-0.grafana.net:443",
+  "tempo_username": "000000",
+  "alias": "changeme",
+  "instance_id": "000000",
+  "region": "prod-us-west-0"
+}
