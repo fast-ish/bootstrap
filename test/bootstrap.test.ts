@@ -1,0 +1,1 @@
+test("fastish resources created", () => {})
