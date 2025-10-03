@@ -1,0 +1,16 @@
+{
+  "host": {
+    "account": "351619759866"
+  },
+  "synthesizer": {
+    "name": "default",
+    "account": "consumer-id",
+    "region": "us-west-2",
+    "subscriberRoleArn": "arn:aws:iam::351619759866:role/fastish/default/subscriber/subscriber-id",
+    "externalId": "subscriber-api-key",
+    "releases": [ "all", "druid", "webapp" ],
+    "cdk": {
+      "version": "21"
+    }
+  }
+}
