@@ -59,7 +59,7 @@ jobs:
 
       - name: upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results
           path: target/surefire-reports/
@@ -109,7 +109,7 @@ jobs:
         continue-on-error: true
 
       - name: upload jacoco coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: jacoco-report
           path: target/site/jacoco/
@@ -159,7 +159,7 @@ jobs:
 
       - name: upload spotbugs report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: spotbugs-report
           path: target/spotbugsXml.xml
@@ -194,7 +194,7 @@ jobs:
 
       - name: upload pmd report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: pmd-report
           path: |
@@ -230,7 +230,7 @@ jobs:
 
       - name: upload checkstyle report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: checkstyle-report
           path: target/checkstyle-result.xml
@@ -272,7 +272,7 @@ jobs:
 
       - name: upload dependency check results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dependency-check-report
           path: reports/
