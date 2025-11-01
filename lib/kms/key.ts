@@ -60,11 +60,11 @@ export class CdkEncryptionKey extends Construct {
   }
 
   private target() {
-    const synthesizer = this.node.getContext("synthesizer")
+    const subscriber = this.node.getContext("subscriber")
 
     return {
-      account: synthesizer.account,
-      name: synthesizer.name,
+      account: subscriber.account,
+      name: subscriber.name,
     }
   }
 }

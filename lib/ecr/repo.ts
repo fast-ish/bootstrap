@@ -45,15 +45,15 @@ export class ImagesRepo extends Construct {
   }
 
   private target() {
-    const synthesizer = this.node.getContext("synthesizer")
+    const subscriber = this.node.getContext("subscriber")
 
     return {
-      account: synthesizer.account,
-      name: synthesizer.name,
-      region: synthesizer.region,
-      externalId: synthesizer.externalId,
-      subscriberRoleArn: synthesizer.subscriberRoleArn,
-      releases: synthesizer.releases
+      account: subscriber.account,
+      name: subscriber.name,
+      region: subscriber.region,
+      externalId: subscriber.externalId,
+      subscriberRoleArn: subscriber.subscriberRoleArn,
+      releases: subscriber.releases
     }
   }
 }

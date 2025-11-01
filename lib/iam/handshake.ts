@@ -70,30 +70,30 @@ export class CdkHandshakeRoleConstruct extends Construct {
         roles: [ this.role ],
         document: this.canGetHostedZoneInfo(id)
       }))
+
+    this.role.attachInlinePolicy(
+      new iam.Policy(scope, `${ id }-handshake-can-access-ecr-policy`, {
+        policyName: `${ id }-handshake-can-access-ecr`,
+        roles: [ this.role ],
+        document: this.canAccessEcr(id)
+      }))
   }
 
   private canAssumeRoles(id: string): iam.PolicyDocument {
     const t = this.target()
 
-    const principals = []
-    if (t.releases.includes("all"))
-      principals.push(`arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-exec`)
-    if (t.releases.includes("druid"))
-      principals.push(`arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-druid-exec`)
-    if (t.releases.includes("webapp"))
-      principals.push(`arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-webapp-exec`)
-
+    // Allow assuming AWS CDK default bootstrap roles
     return new iam.PolicyDocument({
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [ "sts:AssumeRole" ],
           resources: [
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-lookup`,
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-assets`,
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-images`,
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-deploy`,
-            ...principals,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-cfn-exec-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-deploy-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-file-publishing-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-image-publishing-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-lookup-role-${ t.account }-${ t.region }`,
           ],
           conditions: {
             StringEquals: {
@@ -127,25 +127,18 @@ export class CdkHandshakeRoleConstruct extends Construct {
   private canSimulatePrincipalPolicies(id: string): iam.PolicyDocument {
     const t = this.target()
 
-    const principals = []
-    if (t.releases.includes("all"))
-      principals.push(`arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-exec`)
-    if (t.releases.includes("druid"))
-      principals.push(`arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-druid-exec`)
-    if (t.releases.includes("webapp"))
-      principals.push(`arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-webapp-exec`)
-
+    // Allow simulating AWS CDK default bootstrap roles
     return new iam.PolicyDocument({
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [ "iam:SimulatePrincipalPolicy" ],
           resources: [
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-lookup`,
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-assets`,
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-images`,
-            `arn:aws:iam::${ t.account }:role/${ id }-${ t.name }-deploy`,
-            ...principals,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-cfn-exec-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-deploy-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-file-publishing-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-image-publishing-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-lookup-role-${ t.account }-${ t.region }`,
           ],
           conditions: {
             StringEquals: {
@@ -160,19 +153,21 @@ export class CdkHandshakeRoleConstruct extends Construct {
   private canAccessAssets(id: string): iam.PolicyDocument {
     const t = this.target()
 
+    // Allow access to AWS CDK default bootstrap S3 bucket
     return new iam.PolicyDocument({
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [
             "s3:PutObject",
+            "s3:GetObject",
             "s3:GetEncryptionConfiguration",
             "s3:ListBucket",
             "s3:GetBucketLocation"
           ],
           resources: [
-            `arn:aws:s3:::${ id }-${ t.name }`,
-            `arn:aws:s3:::${ id }-${ t.name }/*`
+            `arn:aws:s3:::cdk-hnb659fds-assets-${ t.account }-${ t.region }`,
+            `arn:aws:s3:::cdk-hnb659fds-assets-${ t.account }-${ t.region }/*`
           ],
           conditions: {
             StringEquals: {
@@ -232,6 +227,36 @@ export class CdkHandshakeRoleConstruct extends Construct {
     })
   }
 
+  private canAccessEcr(id: string): iam.PolicyDocument {
+    const t = this.target()
+
+    // Allow access to AWS CDK default bootstrap ECR repository
+    return new iam.PolicyDocument({
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "ecr:PutImage",
+            "ecr:InitiateLayerUpload",
+            "ecr:UploadLayerPart",
+            "ecr:CompleteLayerUpload",
+            "ecr:BatchCheckLayerAvailability",
+            "ecr:GetAuthorizationToken",
+            "ecr:DescribeRepositories"
+          ],
+          resources: [
+            `arn:aws:ecr:${ t.region }:${ t.account }:repository/cdk-hnb659fds-container-assets-${ t.account }-${ t.region }`
+          ]
+        }),
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [ "ecr:GetAuthorizationToken" ],
+          resources: [ "*" ]
+        })
+      ]
+    })
+  }
+
   private host() {
     return {
       account: this.node.getContext("host")?.account,
@@ -239,15 +264,15 @@ export class CdkHandshakeRoleConstruct extends Construct {
   }
 
   private target() {
-    const synthesizer = this.node.getContext("synthesizer")
+    const subscriber = this.node.getContext("subscriber")
 
     return {
-      account: synthesizer.account,
-      name: synthesizer.name,
-      region: synthesizer.region,
-      externalId: synthesizer.externalId,
-      subscriberRoleArn: synthesizer.subscriberRoleArn,
-      releases: synthesizer.releases
+      account: subscriber.account,
+      name: subscriber.name,
+      region: subscriber.region,
+      externalId: subscriber.externalId,
+      subscriberRoleArn: subscriber.subscriberRoleArn,
+      releases: subscriber.releases
     }
   }
 }
