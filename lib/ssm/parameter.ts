@@ -23,11 +23,11 @@ export class CdkVersionParameter extends Construct {
   }
 
   private target() {
-    const synthesizer = this.node.getContext("synthesizer")
+    const subscriber = this.node.getContext("subscriber")
 
     return {
-      name: synthesizer.name,
-      version: synthesizer.cdk.version,
+      name: subscriber.name,
+      version: subscriber.cdk.version,
     }
   }
 }

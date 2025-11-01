@@ -2,7 +2,7 @@
 
 <div align="center">
 
-*fastish bootstrap cdk application that provisions the foundational aws resources required for deploying fastish platform infrastructure and applications*
+*minimal fastish bootstrap cdk application that creates a handshake role for cross-account access to aws cdk default resources*
 
 [![license: mit](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![typescript](https://img.shields.io/badge/TypeScript-5%2B-blue.svg)](https://www.typescriptlang.org/)
@@ -12,59 +12,60 @@
 
 ## overview
 
-the bootstrap stack creates the foundational aws resources that the fastish platform requires for cdk deployments. this is a one-time setup that must be completed before deploying any fastish applications.
+the bootstrap stack creates a minimal set of resources required for fastish to securely access your aws account. it leverages the standard aws cdk bootstrap resources (created by `cdk bootstrap`) and only adds a handshake role for cross-account access.
 
 ### what this creates
 
-the bootstrap stack provisions three main resource categories:
+the bootstrap stack provisions **only one resource**:
 
-#### 1. iam roles (8 specialized roles)
-+ **handshake role**: establishes trust relationships with external aws accounts
-+ **lookup role**: discovers and validates existing aws resources during deployment
-+ **assets role**: manages s3 bucket operations for deployment assets (templates, files)
-+ **images role**: manages ecr repository operations for docker container images
-+ **deploy role**: executes cloudformation stack deployments and updates
-+ **exec role**: general cloudformation execution permissions for custom resources
-+ **druid exec role**: specialized execution role for apache druid deployments with extended permissions
-+ **webapp exec role**: specialized execution role for web application deployments
-
-#### 2. storage resources
-+ **s3 bucket**: stores cdk deployment assets (cloudformation templates, lambda code, files)
-  - versioning enabled
-  - encryption at rest
-  - lifecycle policies for cleanup
-+ **ecr repository**: stores docker container images for lambda and fargate deployments
-  - image scanning enabled
-  - lifecycle policies for image retention
-
-#### 3. encryption & parameters
-+ **kms key**: encrypts sensitive data at rest (s3, secrets, parameters)
-  - automatic key rotation
-  - access controlled via iam policies
-+ **kms alias**: friendly name for the encryption key (`alias/fastish`)
-+ **ssm parameter**: stores fastish version and configuration metadata
-  - encrypted with kms key
-  - accessible to deployment roles
+#### handshake iam role
++ **purpose**: establishes secure cross-account trust with the fastish host account
++ **trust policy**: allows the fastish host account to assume this role using external id verification
++ **permissions**: can assume aws cdk default bootstrap roles in your account:
+  - `cdk-hnb659fds-cfn-exec-role-{account}-{region}` - cloudformation execution
+  - `cdk-hnb659fds-deploy-role-{account}-{region}` - deployment operations
+  - `cdk-hnb659fds-file-publishing-role-{account}-{region}` - s3 asset publishing
+  - `cdk-hnb659fds-image-publishing-role-{account}-{region}` - ecr image publishing
+  - `cdk-hnb659fds-lookup-role-{account}-{region}` - resource discovery
++ **additional permissions**:
+  - access to cdk s3 assets bucket and ecr repository
+  - describe availability zones
+  - simulate principal policies (for verification)
+  - read secrets manager secrets with fastish prefix
+  - get route53 hosted zone information
+  - get service quotas
 
 ### architecture
 
 ```
-BootstrapStack (fastish-<synthesizer-name>)
-├── FastishRoles (nested stack)
-│   ├── handshake role
-│   ├── lookup role
-│   ├── assets role
-│   ├── images role
-│   ├── deploy role
-│   ├── exec role
-│   ├── druid exec role
-│   └── webapp exec role
-├── FastishStorage (nested stack)
-│   ├── s3 assets bucket
-│   └── ecr images repository
-└── FastishKeys (nested stack)
-    ├── kms encryption key + alias
-    └── ssm version parameter
+┌─────────────────────────────────────────────────────┐
+│ Your AWS Account                                     │
+│                                                      │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ AWS CDK Bootstrap (you create first)          │  │
+│  │  • cdk-hnb659fds-cfn-exec-role-*              │  │
+│  │  • cdk-hnb659fds-deploy-role-*                │  │
+│  │  • cdk-hnb659fds-file-publishing-role-*       │  │
+│  │  • cdk-hnb659fds-image-publishing-role-*      │  │
+│  │  • cdk-hnb659fds-lookup-role-*                │  │
+│  │  • cdk-hnb659fds-assets-* (S3 bucket)         │  │
+│  │  • cdk-hnb659fds-container-assets-* (ECR)     │  │
+│  └──────────────────────────────────────────────┘  │
+│                          ▲                          │
+│                          │ assumes                  │
+│  ┌──────────────────────┼──────────────────────┐   │
+│  │ Fastish Bootstrap (this repo)              │   │
+│  │  • fastish-{name}-handshake                │   │
+│  │    (cross-account trust role)              │   │
+│  └────────────────────────────────────────────┘   │
+│                          ▲                          │
+└──────────────────────────┼──────────────────────────┘
+                           │ assumes from
+┌──────────────────────────┼──────────────────────────┐
+│ Fastish Host Account     │                          │
+│  • subscriber role ──────┘                          │
+│    (with external id verification)                  │
+└─────────────────────────────────────────────────────┘
 ```
 
 ## getting started
@@ -77,27 +78,35 @@ BootstrapStack (fastish-<synthesizer-name>)
 + [aws cdk cli](https://docs.aws.amazon.com/cdk/v2/guide/getting-started.html): `npm install -g aws-cdk`
 + aws account with administrator access
 
-### required: aws cdk bootstrap (default resources)
+### critical prerequisite: aws cdk bootstrap (default resources)
 
-**before deploying the fastish bootstrap stack**, you must run the standard aws cdk bootstrap command. this creates the default cdk toolkit resources that aws cdk requires:
+**you must run the standard aws cdk bootstrap command first**. this creates the foundational cdk toolkit resources that fastish will use. the fastish bootstrap only creates a handshake role that provides secure access to these existing cdk resources.
 
 ```bash
 cdk bootstrap aws://<account-id>/<region>
 ```
 
 **what the default cdk bootstrap creates**:
-+ **s3 bucket**: `cdk-*-assets-<account-id>-<region>` for staging assets
-+ **ecr repository**: `cdk-*-container-assets-<account-id>-<region>` for staging images
-+ **iam roles**: `cdk-*` roles for cloudformation execution
-+ **ssm parameter**: `/cdk-bootstrap/*/version` for tracking bootstrap version
++ **s3 bucket**: `cdk-hnb659fds-assets-<account-id>-<region>` for staging cdk assets
++ **ecr repository**: `cdk-hnb659fds-container-assets-<account-id>-<region>` for container images
++ **5 iam roles**:
+  - `cdk-hnb659fds-cfn-exec-role-<account-id>-<region>` - cloudformation execution
+  - `cdk-hnb659fds-deploy-role-<account-id>-<region>` - deployment orchestration
+  - `cdk-hnb659fds-file-publishing-role-<account-id>-<region>` - s3 asset uploads
+  - `cdk-hnb659fds-image-publishing-role-<account-id>-<region>` - ecr image uploads
+  - `cdk-hnb659fds-lookup-role-<account-id>-<region>` - resource discovery
++ **ssm parameter**: `/cdk-bootstrap/hnb659fds/version` for tracking bootstrap version
 
 **example**:
 ```bash
 # for account 123456789012 in us-west-2
 cdk bootstrap aws://123456789012/us-west-2
+
+# output will show:
+# ✅ Environment aws://123456789012/us-west-2 bootstrapped
 ```
 
-this is a one-time operation per account/region combination. for more details:
+**important**: this is a one-time operation per account/region combination. for more details:
 + [aws cdk bootstrapping guide](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
 + [cdk bootstrap command reference](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-bootstrap.html)
 
@@ -117,18 +126,37 @@ npm run build
 
 #### step 3: configure deployment
 
-the `cdk.json` file tells the cdk toolkit how to execute the app. customize `cdk.context.json` to configure the synthesizer name and scope permissions:
+the `cdk.json` file tells the cdk toolkit how to execute the app. customize `cdk.context.json` to configure the cross-account trust:
 
 **example `cdk.context.json`**:
 ```json
 {
+  "host": {
+    "account": "111111111111"
+  },
   "synthesizer": {
-    "name": "prod"
+    "name": "prod",
+    "account": "123456789012",
+    "region": "us-west-2",
+    "externalId": "your-unique-external-id-from-fastish",
+    "subscriberRoleArn": "arn:aws:iam::111111111111:role/fastish/subscriber/xxx",
+    "cdk": {
+      "version": "21"
+    }
   }
 }
 ```
 
-the synthesizer name will be used to create the stack as `fastish-prod`.
+**field descriptions**:
++ `host.account` - the fastish host aws account id (provided by fastish)
++ `synthesizer.name` - unique name for this handshake (e.g., "prod", "staging")
++ `synthesizer.account` - your aws account id
++ `synthesizer.region` - aws region where cdk bootstrap was run
++ `synthesizer.externalId` - secure external id for cross-account trust (provided by fastish)
++ `synthesizer.subscriberRoleArn` - the fastish subscriber role arn (provided by fastish)
++ `synthesizer.cdk.version` - cdk version number (for tracking)
+
+the stack will be deployed as `fastish-prod` (using the name field).
 
 #### step 4: preview changes
 
@@ -145,47 +173,37 @@ npx cdk deploy
 ```
 
 **what gets deployed**:
-+ 1 main cloudformation stack: `fastish-<synthesizer-name>`
-+ 3 nested cloudformation stacks: roles, storage, keys
-+ 8 iam roles with specific permissions
-+ 1 s3 bucket for assets
-+ 1 ecr repository for container images
-+ 1 kms key with alias for encryption
-+ 1 ssm parameter for version tracking
++ 1 cloudformation stack: `fastish-<synthesizer-name>`
++ 1 iam role: `fastish-<synthesizer-name>-handshake`
+  - can assume cdk default roles in your account
+  - trusted by fastish host account with external id verification
 
 #### step 6: capture outputs
 
-after deployment, the stack outputs a json object containing all resource arns:
+after deployment, the stack outputs a json object containing the handshake role and references to cdk default resources:
 
 ```json
 {
   "roles": {
-    "handshake": "arn:aws:iam::...",
-    "lookup": "arn:aws:iam::...",
-    "assets": "arn:aws:iam::...",
-    "images": "arn:aws:iam::...",
-    "deploy": "arn:aws:iam::...",
-    "exec": "arn:aws:iam::...",
-    "druidExec": "arn:aws:iam::...",
-    "webappExec": "arn:aws:iam::..."
+    "handshake": "arn:aws:iam::123456789012:role/fastish-prod-handshake"
   },
-  "storage": {
-    "assets": "arn:aws:s3:::...",
-    "images": "arn:aws:ecr:..."
-  },
-  "keys": {
-    "kms": {
-      "key": "arn:aws:kms:...",
-      "alias": "alias/fastish"
+  "cdk": {
+    "roles": {
+      "cfnExec": "arn:aws:iam::123456789012:role/cdk-hnb659fds-cfn-exec-role-123456789012-us-west-2",
+      "deploy": "arn:aws:iam::123456789012:role/cdk-hnb659fds-deploy-role-123456789012-us-west-2",
+      "filePublishing": "arn:aws:iam::123456789012:role/cdk-hnb659fds-file-publishing-role-123456789012-us-west-2",
+      "imagePublishing": "arn:aws:iam::123456789012:role/cdk-hnb659fds-image-publishing-role-123456789012-us-west-2",
+      "lookup": "arn:aws:iam::123456789012:role/cdk-hnb659fds-lookup-role-123456789012-us-west-2"
     },
-    "ssm": {
-      "parameter": "arn:aws:ssm:..."
+    "storage": {
+      "assets": "arn:aws:s3:::cdk-hnb659fds-assets-123456789012-us-west-2",
+      "containerAssets": "arn:aws:ecr:us-west-2:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-west-2"
     }
   }
 }
 ```
 
-save these values - fastish platform deployments will reference these resources.
+**save the handshake role arn** - you'll need to provide this to the fastish platform when creating your synthesizer configuration.
 
 ## useful commands
 
@@ -203,24 +221,13 @@ save these values - fastish platform deployments will reference these resources.
 
 to remove the bootstrap stack:
 
-1. **empty the s3 bucket** (required before deletion):
-   ```bash
-   aws s3 rm s3://<bucket-name> --recursive
-   ```
+```bash
+npx cdk destroy
+```
 
-2. **delete ecr images** (optional, will be deleted with stack):
-   ```bash
-   aws ecr batch-delete-image \
-     --repository-name <repo-name> \
-     --image-ids imageTag=latest
-   ```
+this will delete only the handshake role. the aws cdk default bootstrap resources (s3, ecr, roles) will remain intact and can continue to be used by other cdk applications.
 
-3. **destroy the stack**:
-   ```bash
-   npx cdk destroy
-   ```
-
-**warning**: destroying this stack will prevent deployments of any fastish applications that depend on these resources.
+**note**: if you want to completely remove all cdk resources, you would need to manually delete the cdk bootstrap stack (CDKToolkit) from cloudformation console, but this is typically not recommended if you use cdk for other applications.
 
 ## configure grafana
 
