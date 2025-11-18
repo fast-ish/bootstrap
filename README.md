@@ -205,6 +205,70 @@ after deployment, the stack outputs a json object containing the handshake role 
 
 **save the handshake role arn** - you'll need to provide this to the fastish platform when creating your synthesizer configuration.
 
+## testing
+
+the project includes comprehensive unit tests using jest and aws cdk assertions. tests verify the infrastructure code creates the expected aws resources with correct configurations.
+
+### running tests
+
+```bash
+npm test
+```
+
+this runs all tests once and displays results.
+
+### running tests with coverage
+
+```bash
+npm test -- --coverage
+```
+
+coverage reports show which parts of the code are tested. reports are generated in the `coverage/` directory.
+
+### running tests in watch mode
+
+```bash
+npm test -- --watch
+```
+
+watch mode automatically re-runs tests when files change, useful during development.
+
+### what the tests cover
+
+the test suite validates:
+
++ cloudformation template snapshot validation
++ handshake iam role with trust policy for cross-account access
++ iam policy allowing handshake role to assume cdk default roles
++ cloudformation outputs include references to cdk bootstrap resources
+
+### test structure
+
+tests use the `aws-cdk-lib/assertions` library:
++ `Template.fromStack()` - generates cloudformation from cdk stacks
++ `Match.objectLike()` - validates resource properties
++ `Match.arrayWith()` - checks array contents
++ `toMatchSnapshot()` - detects unexpected template changes
+
+**example test**:
+```typescript
+test('creates handshake role with correct trust policy', () => {
+  template.hasResourceProperties('AWS::IAM::Role', {
+    AssumeRolePolicyDocument: Match.objectLike({
+      Statement: Match.arrayWith([
+        Match.objectLike({
+          Effect: 'Allow',
+          Principal: { AWS: 'arn:aws:iam::111111111111:root' },
+          Condition: {
+            StringEquals: { 'sts:ExternalId': 'test-external-id' }
+          }
+        })
+      ])
+    })
+  });
+});
+```
+
 ## useful commands
 
 | command           | description                                          |

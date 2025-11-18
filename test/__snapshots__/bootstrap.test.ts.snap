@@ -1,0 +1,313 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BootstrapStack Snapshot Tests stack matches snapshot 1`] = `
+{
+  "Outputs": {
+    "fastish": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "{"roles":{"handshake":"",
+            {
+              "Fn::GetAtt": [
+                "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+                "Arn",
+              ],
+            },
+            ""},"cdk":{"roles":{"cfnExec":"arn:aws:iam::123456789012:role/cdk-hnb659fds-cfn-exec-role-123456789012-us-east-1","deploy":"arn:aws:iam::123456789012:role/cdk-hnb659fds-deploy-role-123456789012-us-east-1","filePublishing":"arn:aws:iam::123456789012:role/cdk-hnb659fds-file-publishing-role-123456789012-us-east-1","imagePublishing":"arn:aws:iam::123456789012:role/cdk-hnb659fds-image-publishing-role-123456789012-us-east-1","lookup":"arn:aws:iam::123456789012:role/cdk-hnb659fds-lookup-role-123456789012-us-east-1"},"storage":{"assets":"arn:aws:s3:::cdk-hnb659fds-assets-123456789012-us-east-1","containerAssets":"arn:aws:ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1"}}}",
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalAccount": "111111111111",
+                  "sts:ExternalId": "test-external-id",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "arn:aws:iam::111111111111:role/fastish/subscriber/test",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "RoleName": "TestBootstrapStack-test-handshake",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "TestBootstrapStackhandshakecanaccessassetspolicy3E9F1CCD": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:GetEncryptionConfiguration",
+                "s3:ListBucket",
+                "s3:GetBucketLocation",
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalAccount": "123456789012",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:s3:::cdk-hnb659fds-assets-123456789012-us-east-1",
+                "arn:aws:s3:::cdk-hnb659fds-assets-123456789012-us-east-1/*",
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-access-assets",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecanaccessecrpolicy1EE35156": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ecr:PutImage",
+                "ecr:InitiateLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:CompleteLayerUpload",
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetAuthorizationToken",
+                "ecr:DescribeRepositories",
+              ],
+              "Effect": "Allow",
+              "Resource": "arn:aws:ecr:us-east-1:123456789012:repository/cdk-hnb659fds-container-assets-123456789012-us-east-1",
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-access-ecr",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecanassumerolespolicyB8DB9D3E": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalAccount": "123456789012",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-cfn-exec-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-deploy-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-file-publishing-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-image-publishing-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-lookup-role-123456789012-us-east-1",
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-assume-roles",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecandescribeazspolicy99590DD4": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "ec2:DescribeAvailabilityZones",
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalAccount": "123456789012",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-describe-azs",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecangethostedzoneinfopolicy897558CA": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "route53:GetHostedZone",
+                "route53:GetHealthCheckStatus",
+              ],
+              "Effect": "Allow",
+              "Resource": "arn:aws:route53:::hostedzone/*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-get-hosted-zone-info",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecangetservicequotaspolicyE3F6A47C": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "servicequotas:GetServiceQuota",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-get-service-quotas",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecanreadsecretspolicy3B9B4901": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": "arn:aws:secretsmanager:us-east-1:123456789012:secret:TestBootstrapStack*test*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-read-secrets",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "TestBootstrapStackhandshakecansimulateprincipalspolicy5341DD98": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "iam:SimulatePrincipalPolicy",
+              "Condition": {
+                "StringEquals": {
+                  "aws:PrincipalAccount": "123456789012",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-cfn-exec-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-deploy-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-file-publishing-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-image-publishing-role-123456789012-us-east-1",
+                "arn:aws:iam::123456789012:role/cdk-hnb659fds-lookup-role-123456789012-us-east-1",
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "TestBootstrapStack-handshake-can-simulate-principals",
+        "Roles": [
+          {
+            "Ref": "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
