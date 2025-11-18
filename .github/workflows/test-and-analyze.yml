@@ -46,7 +46,7 @@ jobs:
 
     - name: upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: test-results
         path: coverage/
@@ -76,7 +76,7 @@ jobs:
 
     - name: upload coverage report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: coverage-report
         path: coverage/
@@ -143,7 +143,7 @@ jobs:
 
     - name: upload eslint report
       if: always() && steps.check-eslint.outputs.configured == 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: eslint-report
         path: eslint-report.json
@@ -190,7 +190,7 @@ jobs:
 
     - name: upload audit results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: npm-audit-report
         path: npm-audit.json
@@ -217,7 +217,7 @@ jobs:
 
     - name: upload dependency check results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: dependency-check-report
         path: reports/
