@@ -13,7 +13,7 @@ describe('BootstrapStack', () => {
         host: {
           account: '111111111111'
         },
-        subscriber: {
+        self: {
           name: 'test',
           account: '123456789012',
           region: 'us-east-1',
