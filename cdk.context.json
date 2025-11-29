@@ -2,14 +2,11 @@
   "host": {
     "account": "000000000000"
   },
-  "subscriber": {
-    "name": "xxxxx",
-    "account": "111111111111",
+  "self": {
+    "name": "rolename",
+    "account": "000000000000",
     "region": "us-west-2",
-    "externalId": "fPctyIvfbavnRfLSH5a7ajMLHCTu3o61vwGtpC62",
-    "subscriberRoleArn": "arn:aws:iam::000000000000:role/fastish/default/subscriber/xxxxx",
-    "cdk": {
-      "version": "21"
-    }
+    "externalId": "202fcc9fcb6042c6aad172cbb0333cd1",
+    "subscriberRoleArn": "arn:aws:iam::000000000000:role/fastish/default/subscriber/4ef16960-836a-4970-9555-0118200b5009"
   }
 }
