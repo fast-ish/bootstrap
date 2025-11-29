@@ -262,6 +262,12 @@ exports[`BootstrapStack Snapshot Tests stack matches snapshot 1`] = `
               },
               "Effect": "Allow",
               "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "TestBootstrapStackcdkhandshakeroleTestBootstrapStacktesthandshake5915F487",
+                    "Arn",
+                  ],
+                },
                 "arn:aws:iam::123456789012:role/cdk-hnb659fds-cfn-exec-role-123456789012-us-east-1",
                 "arn:aws:iam::123456789012:role/cdk-hnb659fds-deploy-role-123456789012-us-east-1",
                 "arn:aws:iam::123456789012:role/cdk-hnb659fds-file-publishing-role-123456789012-us-east-1",
