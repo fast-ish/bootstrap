@@ -127,13 +127,14 @@ export class CdkHandshakeRoleConstruct extends Construct {
   private canSimulatePrincipalPolicies(id: string): iam.PolicyDocument {
     const t = this.target()
 
-    // Allow simulating AWS CDK default bootstrap roles
+    // Allow simulating AWS CDK default bootstrap roles and self (handshake role)
     return new iam.PolicyDocument({
       statements: [
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [ "iam:SimulatePrincipalPolicy" ],
           resources: [
+            this.role.roleArn,
             `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-cfn-exec-role-${ t.account }-${ t.region }`,
             `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-deploy-role-${ t.account }-${ t.region }`,
             `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-file-publishing-role-${ t.account }-${ t.region }`,
@@ -264,15 +265,19 @@ export class CdkHandshakeRoleConstruct extends Construct {
   }
 
   private target() {
-    const subscriber = this.node.getContext("subscriber")
+    const self = this.node.getContext("self")
+
+    if (!/^[a-zA-Z]{3,}$/.test(self.name)) {
+      throw new Error(`self.name must contain only alphabetical characters and be at least 3 characters long, got: "${self.name}"`)
+    }
 
     return {
-      account: subscriber.account,
-      name: subscriber.name,
-      region: subscriber.region,
-      externalId: subscriber.externalId,
-      subscriberRoleArn: subscriber.subscriberRoleArn,
-      releases: subscriber.releases
+      account: self.account,
+      name: self.name,
+      region: self.region,
+      externalId: self.externalId,
+      subscriberRoleArn: self.subscriberRoleArn,
+      releases: self.releases
     }
   }
 }
