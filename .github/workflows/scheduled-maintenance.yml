@@ -12,9 +12,6 @@ permissions:
   pull-requests: write
   contents: read
 
-env:
-  NODE_VERSION: '20'
-
 jobs:
   cleanup-artifacts:
     name: Cleanup Old Artifacts
@@ -236,60 +233,3 @@ jobs:
           find . -name "*.ts" -type f -exec wc -l {} + | sort -rn | head -10 >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "*Top 10 largest TypeScript files by line count*" >> $GITHUB_STEP_SUMMARY
-
-  health-check:
-    name: Repository Health Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run health checks
-        run: |
-          echo "## 🏥 Repository Health Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Check if build works
-          echo "### Build Status:" >> $GITHUB_STEP_SUMMARY
-          if npm run build; then
-            echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Check for TODO comments
-          echo "### TODO Comments:" >> $GITHUB_STEP_SUMMARY
-          TODO_COUNT=$(grep -r "TODO" --include="*.ts" --include="*.tsx" --include="*.js" . | wc -l || echo "0")
-          echo "Found $TODO_COUNT TODO comments in TypeScript/JavaScript files" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Check for FIXME comments
-          echo "### FIXME Comments:" >> $GITHUB_STEP_SUMMARY
-          FIXME_COUNT=$(grep -r "FIXME" --include="*.ts" --include="*.tsx" --include="*.js" . | wc -l || echo "0")
-          echo "Found $FIXME_COUNT FIXME comments in TypeScript/JavaScript files" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Check documentation
-          echo "### Documentation Check:" >> $GITHUB_STEP_SUMMARY
-          if [ -f "README.md" ]; then
-            echo "✅ README.md exists" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ README.md not found" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ -d "docs" ]; then
-            echo "✅ docs/ directory exists" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ docs/ directory not found" >> $GITHUB_STEP_SUMMARY
-          fi
