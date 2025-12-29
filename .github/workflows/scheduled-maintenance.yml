@@ -13,8 +13,7 @@ permissions:
   contents: read
 
 env:
-  JAVA_VERSION: '21'
-  JAVA_DISTRIBUTION: 'corretto'
+  NODE_VERSION: '20'
 
 jobs:
   cleanup-artifacts:
@@ -214,8 +213,9 @@ jobs:
           echo "### File Statistics:" >> $GITHUB_STEP_SUMMARY
           echo "| File Type | Count |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Java files | $(find . -name "*.java" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
-          echo "| XML files | $(find . -name "*.xml" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| TypeScript files | $(find . -name "*.ts" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| JavaScript files | $(find . -name "*.js" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| JSON files | $(find . -name "*.json" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
           echo "| YAML files | $(find . -name "*.yml" -o -name "*.yaml" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
           echo "| Markdown files | $(find . -name "*.md" -type f | wc -l) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -233,9 +233,9 @@ jobs:
           # Code statistics
           echo "### Code Statistics:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          find . -name "*.java" -type f -exec wc -l {} + | sort -rn | head -10 >> $GITHUB_STEP_SUMMARY
+          find . -name "*.ts" -type f -exec wc -l {} + | sort -rn | head -10 >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "*Top 10 largest Java files by line count*" >> $GITHUB_STEP_SUMMARY
+          echo "*Top 10 largest TypeScript files by line count*" >> $GITHUB_STEP_SUMMARY
 
   health-check:
     name: Repository Health Check
@@ -245,12 +245,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run health checks
         run: |
@@ -259,7 +261,7 @@ jobs:
 
           # Check if build works
           echo "### Build Status:" >> $GITHUB_STEP_SUMMARY
-          if mvn clean compile -B; then
+          if npm run build; then
             echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
@@ -268,14 +270,14 @@ jobs:
 
           # Check for TODO comments
           echo "### TODO Comments:" >> $GITHUB_STEP_SUMMARY
-          TODO_COUNT=$(grep -r "TODO" --include="*.java" . | wc -l || echo "0")
-          echo "Found $TODO_COUNT TODO comments in Java files" >> $GITHUB_STEP_SUMMARY
+          TODO_COUNT=$(grep -r "TODO" --include="*.ts" --include="*.tsx" --include="*.js" . | wc -l || echo "0")
+          echo "Found $TODO_COUNT TODO comments in TypeScript/JavaScript files" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Check for FIXME comments
           echo "### FIXME Comments:" >> $GITHUB_STEP_SUMMARY
-          FIXME_COUNT=$(grep -r "FIXME" --include="*.java" . | wc -l || echo "0")
-          echo "Found $FIXME_COUNT FIXME comments in Java files" >> $GITHUB_STEP_SUMMARY
+          FIXME_COUNT=$(grep -r "FIXME" --include="*.ts" --include="*.tsx" --include="*.js" . | wc -l || echo "0")
+          echo "Found $FIXME_COUNT FIXME comments in TypeScript/JavaScript files" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Check documentation
