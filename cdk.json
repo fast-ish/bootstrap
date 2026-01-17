@@ -79,15 +79,5 @@
     "@aws-cdk/core:newStyleStackSynthesis": true,
     "@aws-cdk/core:stackRelativeExports": true,
     "aws-cdk:enableDiffNoFail": true
-  },
-  "build": {
-    "exclude": [
-      "cdk.out",
-      "node_modules",
-      ".git",
-      "*.backup",
-      "*.log",
-      "target"
-    ]
   }
 }

@@ -1,45 +1,47 @@
 import { Construct } from "constructs"
 import * as cdk from "aws-cdk-lib"
-import { CdkHandshakeRoleConstruct } from "./iam/handshake"
+import { StackSetExecutionRoleConstruct } from "./iam/stackset-execution"
 
-// Minimal bootstrap stack for Fastish cross-account access
-// Creates only the handshake role that can assume AWS CDK default bootstrap roles
-// Assumes customer has already run: cdk bootstrap aws://{account}/{region}
+/**
+ * Bootstrap stack for Fastish subscriber accounts.
+ *
+ * Creates the AWSCloudFormationStackSetExecutionRole that allows the Fastish platform
+ * to deploy infrastructure via CloudFormation StackSets.
+ *
+ * This role must exist in the subscriber's account before StackSet instances can be created.
+ */
 export class BootstrapStack extends cdk.Stack {
-  public handshake: CdkHandshakeRoleConstruct
+  public stackSetExecutionRole: StackSetExecutionRoleConstruct
 
   constructor(scope: Construct, id: string, name: string, props?: cdk.StackProps) {
-    super(scope, id + `-${ name }`, props)
+    super(scope, id + `-${name}`, props)
 
-    // Create only the handshake role for cross-account access
-    // This role allows the Fastish host account to assume CDK default roles
-    this.handshake = new CdkHandshakeRoleConstruct(this, id)
+    // Create the StackSet execution role for cross-account deployments
+    // This role allows the Fastish host account to deploy CloudFormation stacks
+    this.stackSetExecutionRole = new StackSetExecutionRoleConstruct(this, id)
 
-    // Output the handshake role ARN
+    // Output the execution role ARN
     const required = {
       roles: {
-        handshake: this.handshake.role.roleArn,
+        stackSetExecution: this.stackSetExecutionRole.role.roleArn,
       },
-      cdk: {
-        // Reference to AWS CDK default bootstrap resources (must exist)
-        roles: {
-          cfnExec: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
-          deploy: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
-          filePublishing: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-file-publishing-role-${this.account}-${this.region}`,
-          imagePublishing: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-image-publishing-role-${this.account}-${this.region}`,
-          lookup: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-lookup-role-${this.account}-${this.region}`,
-        },
-        storage: {
-          assets: `arn:aws:s3:::cdk-hnb659fds-assets-${this.account}-${this.region}`,
-          containerAssets: `arn:aws:ecr:${this.region}:${this.account}:repository/cdk-hnb659fds-container-assets-${this.account}-${this.region}`,
-        }
+      subscriber: {
+        name: this.node.getContext("self").name,
+        account: this.account,
+        region: this.region,
+        externalId: this.node.getContext("self").externalId
+      },
+      host: {
+        account: this.node.getContext("host").account,
+        stackSetAdminRole: `arn:aws:iam::${this.node.getContext("host").account}:role/AWSCloudFormationStackSetAdministrationRole`
       }
     }
 
     // Output resource information
-    new cdk.CfnOutput(this, "fastish-resources", {
-      key: "fastish",
+    new cdk.CfnOutput(this, "fastish-stackset-resources", {
+      exportName: "fastish-stackset",
       value: JSON.stringify(required),
+      description: "Fastish StackSet execution role and subscriber information"
     })
   }
 }
