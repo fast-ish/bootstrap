@@ -1,12 +1,10 @@
 {
-  "host": {
-    "account": "000000000000"
-  },
+  "host": { "account": "351619759866" },
   "self": {
-    "name": "rolename",
-    "account": "000000000000",
+    "name": "tinstafl",
+    "account": "767397986924",
     "region": "us-west-2",
-    "externalId": "202fcc9fcb6042c6aad172cbb0333cd1",
-    "subscriberRoleArn": "arn:aws:iam::000000000000:role/fastish/default/subscriber/4ef16960-836a-4970-9555-0118200b5009"
+    "externalId": "Fq4euafqhT9NszVqoWJ7Y2nleYlacArW3eAbyriZ",
+    "subscriberRoleArn": "arn:aws:iam::351619759866:role/fastish/default/subscriber/68a17390-30e1-70b6-d0e0-4bc938d70391"
   }
 }
