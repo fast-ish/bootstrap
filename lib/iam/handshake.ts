@@ -11,15 +11,21 @@ export class CdkHandshakeRoleConstruct extends Construct {
     const t = this.target()
     const name = `${ id }-${ t.name }-handshake`
 
+    // Trust policy allows:
+    // 1. Subscriber's portal role (with external ID) for role chaining
+    // 2. EventBridge service for cross-account Lambda invocation callbacks
     this.role = new iam.Role(this, name, {
       roleName: name,
-      assumedBy: new iam.PrincipalWithConditions(
-        new iam.ArnPrincipal(t.subscriberRoleArn), {
-          StringEquals: {
-            "sts:ExternalId": t.externalId,
-            "aws:PrincipalAccount": this.host().account
-          }
-        })
+      assumedBy: new iam.CompositePrincipal(
+        new iam.PrincipalWithConditions(
+          new iam.ArnPrincipal(t.roleArn), {
+            StringEquals: {
+              "sts:ExternalId": t.externalId,
+              "aws:PrincipalAccount": this.host().account
+            }
+          }),
+        new iam.ServicePrincipal("events.amazonaws.com")
+      )
     })
 
     this.role.attachInlinePolicy(
@@ -76,6 +82,20 @@ export class CdkHandshakeRoleConstruct extends Construct {
         policyName: `${ id }-handshake-can-access-ecr`,
         roles: [ this.role ],
         document: this.canAccessEcr(id)
+      }))
+
+    this.role.attachInlinePolicy(
+      new iam.Policy(scope, `${ id }-handshake-can-deploy-workloads-policy`, {
+        policyName: `${ id }-handshake-can-deploy-workloads`,
+        roles: [ this.role ],
+        document: this.canDeployWorkloads(id)
+      }))
+
+    this.role.attachInlinePolicy(
+      new iam.Policy(scope, `${ id }-handshake-can-invoke-callback-policy`, {
+        policyName: `${ id }-handshake-can-invoke-callback`,
+        roles: [ this.role ],
+        document: this.canInvokeCallback(id)
       }))
   }
 
@@ -258,6 +278,108 @@ export class CdkHandshakeRoleConstruct extends Construct {
     })
   }
 
+  private canDeployWorkloads(id: string): iam.PolicyDocument {
+    const t = this.target()
+
+    // Allow deploying workloads via CloudFormation and managing EventBridge rules
+    return new iam.PolicyDocument({
+      statements: [
+        // EventBridge rules for CloudFormation event callbacks
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "events:PutRule",
+            "events:PutTargets",
+            "events:DeleteRule",
+            "events:RemoveTargets",
+            "events:ListTargetsByRule"
+          ],
+          resources: [ `arn:aws:events:${ t.region }:${ t.account }:rule/cfn-*` ]
+        }),
+        // CloudFormation stack management
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "cloudformation:CreateStack",
+            "cloudformation:UpdateStack",
+            "cloudformation:DeleteStack",
+            "cloudformation:DescribeStacks",
+            "cloudformation:DescribeStackEvents",
+            "cloudformation:GetTemplate",
+            "cloudformation:CreateChangeSet",
+            "cloudformation:DescribeChangeSet",
+            "cloudformation:ExecuteChangeSet"
+          ],
+          resources: [ `arn:aws:cloudformation:${ t.region }:${ t.account }:stack/${ id }-*/*` ]
+        }),
+        // S3 bucket management for workload resources (e.g., Druid deep storage)
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "s3:CreateBucket",
+            "s3:DeleteBucket",
+            "s3:PutBucketEncryption",
+            "s3:PutEncryptionConfiguration",
+            "s3:GetBucketEncryption",
+            "s3:GetEncryptionConfiguration",
+            "s3:PutPublicAccessBlock",
+            "s3:GetPublicAccessBlock",
+            "s3:PutBucketTagging",
+            "s3:GetBucketTagging",
+            "s3:PutBucketPolicy",
+            "s3:GetBucketPolicy",
+            "s3:DeleteBucketPolicy",
+            "s3:GetBucketLocation"
+          ],
+          resources: [ `arn:aws:s3:::${ id }-*` ]
+        }),
+        // IAM pass role for CloudFormation to use execution roles
+        // Allows passing CDK cfn-exec-role and platform-prefixed roles to CloudFormation
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [ "iam:PassRole" ],
+          resources: [
+            `arn:aws:iam::${ t.account }:role/cdk-hnb659fds-cfn-exec-role-${ t.account }-${ t.region }`,
+            `arn:aws:iam::${ t.account }:role/${ id }-*`
+          ],
+          conditions: {
+            StringEquals: {
+              "iam:PassedToService": "cloudformation.amazonaws.com"
+            }
+          }
+        })
+      ]
+    })
+  }
+
+  private canInvokeCallback(id: string): iam.PolicyDocument {
+    const h = this.host()
+    const t = this.target()
+
+    // Allow invoking the callback Lambda in the host (platform) account
+    // This is used by EventBridge rules to send CloudFormation event callbacks
+    return new iam.PolicyDocument({
+      statements: [
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [ "lambda:InvokeFunction" ],
+          resources: [ `arn:aws:lambda:*:${ h.account }:function:*-EventBridgeCallback` ]
+        }),
+        // Allow passing this role to EventBridge for cross-account Lambda invocation
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [ "iam:PassRole" ],
+          resources: [ this.role.roleArn ],
+          conditions: {
+            StringEquals: {
+              "iam:PassedToService": "events.amazonaws.com"
+            }
+          }
+        })
+      ]
+    })
+  }
+
   private host() {
     return {
       account: this.node.getContext("host")?.account,
@@ -276,7 +398,7 @@ export class CdkHandshakeRoleConstruct extends Construct {
       name: self.name,
       region: self.region,
       externalId: self.externalId,
-      subscriberRoleArn: self.subscriberRoleArn,
+      roleArn: self.roleArn,
       releases: self.releases
     }
   }
