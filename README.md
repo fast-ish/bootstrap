@@ -55,7 +55,7 @@ the bootstrap stack provisions **only one resource**:
 │                          │ assumes                  │
 │  ┌──────────────────────┼──────────────────────┐   │
 │  │ Fastish Bootstrap (this repo)              │   │
-│  │  • fastish-{name}-handshake                │   │
+│  │  • {platform}-{name}-handshake             │   │
 │  │    (cross-account trust role)              │   │
 │  └────────────────────────────────────────────┘   │
 │                          ▲                          │
@@ -132,31 +132,29 @@ the `cdk.json` file tells the cdk toolkit how to execute the app. customize `cdk
 ```json
 {
   "host": {
+    "id": "fastish",
     "account": "111111111111"
   },
-  "synthesizer": {
-    "name": "prod",
+  "self": {
+    "name": "default",
     "account": "123456789012",
     "region": "us-west-2",
     "externalId": "your-unique-external-id-from-fastish",
-    "subscriberRoleArn": "arn:aws:iam::111111111111:role/fastish/subscriber/xxx",
-    "cdk": {
-      "version": "21"
-    }
+    "roleArn": "arn:aws:iam::111111111111:role/fastish/subscriber/xxx"
   }
 }
 ```
 
 **field descriptions**:
++ `host.id` - the platform identifier (provided by fastish, defaults to "fastish")
 + `host.account` - the fastish host aws account id (provided by fastish)
-+ `synthesizer.name` - unique name for this handshake (e.g., "prod", "staging")
-+ `synthesizer.account` - your aws account id
-+ `synthesizer.region` - aws region where cdk bootstrap was run
-+ `synthesizer.externalId` - secure external id for cross-account trust (provided by fastish)
-+ `synthesizer.subscriberRoleArn` - the fastish subscriber role arn (provided by fastish)
-+ `synthesizer.cdk.version` - cdk version number (for tracking)
++ `self.name` - unique name for this handshake (must be alphabetical only, at least 3 chars, e.g., "default", "prod")
++ `self.account` - your aws account id
++ `self.region` - aws region where cdk bootstrap was run
++ `self.externalId` - secure external id for cross-account trust (provided by fastish)
++ `self.roleArn` - the fastish subscriber role arn (provided by fastish)
 
-the stack will be deployed as `fastish-prod` (using the name field).
+the stack will be deployed as `{host.id}-{name}` (e.g., `fastish-default`).
 
 #### step 4: preview changes
 
@@ -173,8 +171,8 @@ npx cdk deploy
 ```
 
 **what gets deployed**:
-+ 1 cloudformation stack: `fastish-<synthesizer-name>`
-+ 1 iam role: `fastish-<synthesizer-name>-handshake`
++ 1 cloudformation stack: `{platform}-<name>`
++ 1 iam role: `{platform}-<name>-handshake`
   - can assume cdk default roles in your account
   - trusted by fastish host account with external id verification
 
@@ -185,7 +183,7 @@ after deployment, the stack outputs a json object containing the handshake role 
 ```json
 {
   "roles": {
-    "handshake": "arn:aws:iam::123456789012:role/fastish-prod-handshake"
+    "handshake": "arn:aws:iam::123456789012:role/{platform}-<name>-handshake"
   },
   "cdk": {
     "roles": {
@@ -203,7 +201,7 @@ after deployment, the stack outputs a json object containing the handshake role 
 }
 ```
 
-**save the handshake role arn** - you'll need to provide this to the fastish platform when creating your synthesizer configuration.
+**save the handshake role arn** - you'll need to provide this to the fastish platform when completing your handshake configuration.
 
 ## testing
 

@@ -6,8 +6,9 @@ import { BootstrapStack } from "../lib/bootstrap-stack"
 
 const app = new cdk.App()
 const name = app.node.getContext("self")?.name
+const platformId = app.node.getContext("platform.id") ?? "fastish"
 
-new BootstrapStack(app, "fastish", name, {
+new BootstrapStack(app, platformId, name, {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
-  description: "required resources to integrate with fastish releases"
+  description: `required resources to integrate with ${platformId} releases`
 })
