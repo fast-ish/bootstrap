@@ -6,7 +6,12 @@ import { BootstrapStack } from "../lib/bootstrap-stack"
 
 const app = new cdk.App()
 const name = app.node.getContext("self")?.name
-const platformId = app.node.getContext("platform.id") ?? "fastish"
+const host = app.node.getContext("host")
+const platformId = host?.id
+
+if (!platformId) {
+  throw new Error("Missing required context: host.id (platform identifier)")
+}
 
 new BootstrapStack(app, platformId, name, {
   env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
