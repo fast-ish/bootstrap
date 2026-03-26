@@ -1,10 +1,13 @@
 {
-  "host": { "account": "351619759866" },
+  "host": {
+    "id": "spaz",
+    "account": "351619759866"
+  },
   "self": {
-    "name": "tinstafl",
+    "name": "default",
     "account": "767397986924",
     "region": "us-west-2",
-    "externalId": "Fq4euafqhT9NszVqoWJ7Y2nleYlacArW3eAbyriZ",
-    "subscriberRoleArn": "arn:aws:iam::351619759866:role/fastish/default/subscriber/68a17390-30e1-70b6-d0e0-4bc938d70391"
+    "externalId": "1a2b3bdb-90f1-4743-a86f-49c9053edfb5",
+    "roleArn": "arn:aws:iam::351619759866:role/spaz/exclusive/983173c0-a0a1-7017-7e5f-6fe56e6c21d5"
   }
 }

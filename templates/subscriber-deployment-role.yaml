@@ -1,0 +1,185 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Fastish Cross-Account Deployment Role for Subscriber'
+
+Parameters:
+  SubscriberId:
+    Type: String
+    Description: Your Fastish Subscriber ID
+    AllowedPattern: '^sub_[a-zA-Z0-9]{16}$'
+
+  ExternalId:
+    Type: String
+    Description: Secure External ID (provided by Fastish)
+    NoEcho: true
+    MinLength: 64
+    MaxLength: 256
+
+  FastishManagementAccount:
+    Type: String
+    Default: '123456789012'
+    Description: Fastish Management Account ID
+    AllowedPattern: '^\d{12}$'
+
+  DeploymentRegions:
+    Type: CommaDelimitedList
+    Default: 'us-east-1,us-west-2,eu-west-1'
+    Description: Allowed AWS regions for deployments
+
+Resources:
+  FastishDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: FastishDeploymentRole
+      Description: !Sub 'Cross-account deployment role for Fastish subscriber ${SubscriberId}'
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowFastishAssumeRole
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${FastishManagementAccount}:role/GitHubActionsDeployRole'
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref ExternalId
+              # Optional: IP allowlist for GitHub Actions runners
+              # IpAddress:
+              #   'aws:SourceIp':
+              #     - '13.64.0.0/16'   # GitHub Actions IP ranges
+              #     - '13.65.0.0/16'
+
+      ManagedPolicyArns:
+        - !Ref FastishDeploymentPolicy
+
+      Tags:
+        - Key: fastish:subscriber-id
+          Value: !Ref SubscriberId
+        - Key: fastish:managed
+          Value: 'true'
+
+  FastishDeploymentPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: FastishDeploymentPolicy
+      Description: 'Permissions for Fastish infrastructure deployments'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # CloudFormation
+          - Sid: CloudFormationAccess
+            Effect: Allow
+            Action:
+              - 'cloudformation:*'
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'aws:RequestedRegion': !Ref DeploymentRegions
+
+          # IAM (scoped to fastish-* and cdk-*)
+          - Sid: IAMRoleManagement
+            Effect: Allow
+            Action:
+              - 'iam:CreateRole'
+              - 'iam:DeleteRole'
+              - 'iam:GetRole'
+              - 'iam:UpdateRole'
+              - 'iam:PutRolePolicy'
+              - 'iam:DeleteRolePolicy'
+              - 'iam:AttachRolePolicy'
+              - 'iam:DetachRolePolicy'
+              - 'iam:TagRole'
+              - 'iam:PassRole'
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/fastish-*'
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/cdk-*'
+
+          # S3 (CDK assets + workload buckets)
+          - Sid: S3BucketAccess
+            Effect: Allow
+            Action:
+              - 's3:*'
+            Resource:
+              - 'arn:aws:s3:::fastish-*'
+              - 'arn:aws:s3:::fastish-*/*'
+              - 'arn:aws:s3:::cdk-*'
+              - 'arn:aws:s3:::cdk-*/*'
+
+          # Lambda
+          - Sid: LambdaManagement
+            Effect: Allow
+            Action:
+              - 'lambda:*'
+            Resource: !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:fastish-*'
+
+          # EKS
+          - Sid: EKSManagement
+            Effect: Allow
+            Action:
+              - 'eks:*'
+            Resource: !Sub 'arn:aws:eks:*:${AWS::AccountId}:cluster/fastish-*'
+
+          # VPC
+          - Sid: VPCManagement
+            Effect: Allow
+            Action:
+              - 'ec2:*Vpc*'
+              - 'ec2:*Subnet*'
+              - 'ec2:*InternetGateway*'
+              - 'ec2:*RouteTable*'
+              - 'ec2:*SecurityGroup*'
+              - 'ec2:DescribeAvailabilityZones'
+            Resource: '*'
+
+          # ECR
+          - Sid: ECRAccess
+            Effect: Allow
+            Action:
+              - 'ecr:*'
+            Resource:
+              - !Sub 'arn:aws:ecr:*:${AWS::AccountId}:repository/fastish-*'
+
+          # Secrets Manager
+          - Sid: SecretsAccess
+            Effect: Allow
+            Action:
+              - 'secretsmanager:GetSecretValue'
+              - 'secretsmanager:DescribeSecret'
+            Resource: !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:fastish/*'
+
+          # Read-only for troubleshooting
+          - Sid: ReadOnlyAccess
+            Effect: Allow
+            Action:
+              - 'logs:DescribeLogGroups'
+              - 'cloudwatch:GetMetricData'
+              - 'sts:GetCallerIdentity'
+            Resource: '*'
+
+          # Deny dangerous operations
+          - Sid: DenyDangerousOps
+            Effect: Deny
+            Action:
+              - 'iam:DeleteUser'
+              - 'organizations:*'
+              - 'account:CloseAccount'
+            Resource: '*'
+
+Outputs:
+  RoleArn:
+    Description: ARN of the Fastish Deployment Role
+    Value: !GetAtt FastishDeploymentRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
+
+  SubscriberId:
+    Description: Subscriber ID for this role
+    Value: !Ref SubscriberId
+
+  SetupInstructions:
+    Description: Next steps
+    Value: !Sub |
+      Role created successfully. Provide to Fastish:
+      - Role ARN: ${FastishDeploymentRole.Arn}
+      - Account ID: ${AWS::AccountId}
+      - Subscriber ID: ${SubscriberId}
